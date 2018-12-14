@@ -48,22 +48,29 @@ namespace GameOfLife
         {
             if (Game.IsStarted)
             {
-                PaintGreed(e.Graphics, new Pen(Color.Green), Game.World.MapHeight + 1, Game.World.MapWidth + 1);
+                PaintGreed(e.Graphics, new Pen(Color.Green), Game.World.MapHeight, Game.World.MapWidth,
+                    Game.World.MapWidth * Camera.Scale, Game.World.MapHeight * Camera.Scale);
                 PaintMap(e.Graphics, new SolidBrush(Color.Green));
             }
         }
 
-        private void PaintGreed(Graphics render, Pen pen, int rowsCount, int columnsCount)
+        private void PaintGreed(Graphics render, Pen pen, int rowsCount, int columnsCount, int width, int height) // BUG
         {
-            for (int i = Scene.Location.Y; i < Scene.Location.Y + rowsCount; ++i)
+            for (int y = 0; y < rowsCount; ++y)
             {
-                render.DrawLine(pen, Camera.Location.X - Scene.Location.X, i * Camera.Scale,
-                    Camera.Location.X + Camera.Bounds.Width - Scene.Location.X, i * Camera.Scale);
+                if ((y >= Camera.Location.Y - Scene.Location.Y) && (y <= Camera.Location.Y + Camera.Bounds.Height - Scene.Location.Y))
+                {
+                    render.DrawLine(pen, Scene.Location.X - Camera.Location.X, (y * Camera.Scale) + Scene.Location.Y - Camera.Location.Y,
+                        Scene.Location.X + width - Camera.Location.X, (y * Camera.Scale) + Scene.Location.Y - Camera.Location.Y);
+                }
             }
-            for (int i = Scene.Location.X; i < Scene.Location.X + columnsCount; ++i)
+            for (int x = 0; x < columnsCount; ++x)
             {
-                render.DrawLine(pen, i * Camera.Scale, Camera.Location.Y - Scene.Location.Y,
-                    i * Camera.Scale, Camera.Location.Y + Camera.Bounds.Height - Scene.Location.Y);
+                if ((x >= Camera.Location.X - Scene.Location.X) && (x <= Camera.Location.X + Camera.Bounds.Width - Scene.Location.X))
+                {
+                    render.DrawLine(pen, (x * Camera.Scale) + Scene.Location.X - Camera.Location.X, Scene.Location.Y - Camera.Location.Y,
+                        (x * Camera.Scale) + Scene.Location.X - Camera.Location.X, Scene.Location.Y + height - Camera.Location.Y);
+                }
             }
         }
 
@@ -73,11 +80,11 @@ namespace GameOfLife
             {
                 for (int x = 0; x < Game.World.MapWidth; ++x)
                 {
-                    if ((x >= Camera.Location.X) && (x <= Camera.Location.X + Camera.Bounds.Width) &&
-                        (y >= Camera.Location.Y) && (x <= Camera.Location.Y + Camera.Bounds.Height) &&
+                    if ((x >= Camera.Location.X - Scene.Location.X) && (x <= Camera.Location.X + Camera.Bounds.Width - Scene.Location.X) &&
+                        (y >= Camera.Location.Y - Scene.Location.Y) && (y <= Camera.Location.Y + Camera.Bounds.Height - Scene.Location.Y) &&
                         (Game.World.Map[y, x] == 1))
                     {
-                        PaintObject(render, brush, (x - Scene.Location.X) * Camera.Scale, (y - Scene.Location.Y) * Camera.Scale, Camera.Scale, Camera.Scale);
+                        PaintObject(render, brush, (x + Scene.Location.X - Camera.Location.X) * Camera.Scale, (y + Scene.Location.Y - Camera.Location.Y) * Camera.Scale, Camera.Scale, Camera.Scale);
                     }
                 }
             }
@@ -110,7 +117,7 @@ namespace GameOfLife
                     Camera.Relocate(Scene.Location);
                 }
 
-                Game.StartNew(settings.Seed, (Scene.Height + 1) / Camera.Scale, (Scene.Width + 1) / Camera.Scale, settings.PopulationRate);
+                Game.StartNew(settings.Seed, Scene.Height / Camera.Scale + 1, Scene.Width / Camera.Scale + 1, settings.PopulationRate);
                 GlobalTimer.Interval = 50;
                 Scene.Invalidate();
             }
@@ -135,7 +142,23 @@ namespace GameOfLife
         {
             if (e.KeyCode == Keys.D)
             {
-                Camera.Relocate(new Point(Camera.Location.X + 5, Camera.Location.Y));
+                Camera.Relocate(new Point(Camera.Location.X + Camera.Scale, Camera.Location.Y));
+                Scene.Invalidate();
+            }
+            else if (e.KeyCode == Keys.S)
+            {
+                Camera.Relocate(new Point(Camera.Location.X, Camera.Location.Y + Camera.Scale));
+                Scene.Invalidate();
+            }
+            else if (e.KeyCode == Keys.W)
+            {
+                Camera.Relocate(new Point(Camera.Location.X, Camera.Location.Y - Camera.Scale));
+                Scene.Invalidate();
+            }
+            else if (e.KeyCode == Keys.A)
+            {
+                Camera.Relocate(new Point(Camera.Location.X - Camera.Scale, Camera.Location.Y));
+                Scene.Invalidate();
             }
         }
     }
